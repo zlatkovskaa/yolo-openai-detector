@@ -6,6 +6,16 @@ The gateway must be testable without GPU, without large model downloads, and wit
 
 The CPU YOLO backend is implemented, but default tests should still use fakes and mocks so CI does not require committed weights or internet access.
 
+## Default commands
+
+Use these commands for local verification and CI parity:
+
+```bash
+./.venv/bin/python -m pytest
+./.venv/bin/python -m ruff check .
+./.venv/bin/python -m ruff format --check .
+```
+
 ## Required test groups
 
 | Group | Purpose |
@@ -39,6 +49,8 @@ The CPU YOLO backend is implemented, but default tests should still use fakes an
 - non-CPU device values are rejected at settings validation.
 - detector adapter converts Ultralytics result objects into project schemas.
 - detector load failures are reported as controlled API errors.
+- tests do not require model weights.
+- tests do not require GPU/CUDA.
 
 ## Test fixtures
 

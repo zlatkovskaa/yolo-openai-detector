@@ -34,11 +34,11 @@ OpenAI-style client
 | Component | Responsibility |
 |---|---|
 | FastAPI app | HTTP server and route registration. |
-| Auth module | Fixed bearer key validation. |
-| OpenAI compatibility schemas | Request/response models and error shapes. |
-| Image input parser | Extract one base64 data URL and decode image. |
-| Detector interface | Abstract object detection result from YOLO implementation. |
-| YOLO implementation | CPU object detection. |
+| Auth layer | Fixed bearer key validation. |
+| OpenAI compatibility layer | Request/response models and error shapes. |
+| Image parsing and validation | Extract one base64 data URL and decode image. |
+| Detector abstraction | Normalize detection results from a backend implementation. |
+| Ultralytics CPU backend | CPU object detection. |
 | Configuration | Env-driven model path, CPU device, thresholds, and image size. |
 | Tests | Validate auth, endpoint contract, image parsing, and response mapping. |
 

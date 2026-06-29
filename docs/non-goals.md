@@ -1,6 +1,6 @@
 # Non-goals
 
-This document exists to protect the MVP from scope creep.
+This document exists to protect the MVP from scope creep. The MVP is CPU-only.
 
 ## Not supported in MVP
 
@@ -21,6 +21,7 @@ This document exists to protect the MVP from scope creep.
 | Web UI | API first. |
 | Training/fine-tuning | Inference only. |
 | GPU requirement | Must run on GPU-less machines. |
+| Model weights in repo | Weights are supplied at runtime, not committed. |
 
 ## Scope change process
 

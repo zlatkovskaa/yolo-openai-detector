@@ -324,11 +324,15 @@ Required environment variables:
 |---|---:|---|
 | `YOLO_GATEWAY_API_KEY` | Yes | Fixed bearer API key. |
 | `YOLO_GATEWAY_MODEL_ID` | No | Defaults to `yolo-cpu-detector`. |
-| `YOLO_GATEWAY_YOLO_MODEL` | No | Defaults to a small YOLO model suitable for CPU MVP. |
-| `YOLO_GATEWAY_MAX_IMAGE_BYTES` | No | Maximum decoded image size. |
+| `YOLO_GATEWAY_MODEL_PATH` | No | Path to the YOLO weights file used by the Ultralytics backend. |
+| `YOLO_GATEWAY_YOLO_MODEL` | No | Legacy alias for `YOLO_GATEWAY_MODEL_PATH`. |
+| `YOLO_GATEWAY_DEVICE` | No | Must remain `cpu` in v1. |
 | `YOLO_GATEWAY_CONFIDENCE_THRESHOLD` | No | Detection confidence threshold. |
+| `YOLO_GATEWAY_IOU_THRESHOLD` | No | YOLO IoU threshold. |
+| `YOLO_GATEWAY_IMAGE_SIZE` | No | Inference image size in pixels. |
+| `YOLO_GATEWAY_MAX_IMAGE_BYTES` | No | Maximum decoded image size. |
 
-Never hardcode real secrets. `.env.example` may contain fake placeholders only.
+Never hardcode real secrets. `.env` is ignored and `.env.example` may contain fake placeholders only. Model weights are not committed to the repository.
 
 ---
 

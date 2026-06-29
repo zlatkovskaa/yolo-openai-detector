@@ -18,6 +18,7 @@ This project emulates only a small, documented subset of OpenAI API behavior.
 | `messages` request field | Yes |
 | image as `content[].type = "image_url"` | Yes |
 | base64 data URL image input | Yes |
+| JPEG / PNG / WEBP data URLs | Yes |
 | OpenAI-like `choices[]` response | Yes |
 | assistant message with `role: "assistant"` | Yes |
 
@@ -59,6 +60,12 @@ import json
 payload = json.loads(response.choices[0].message.content)
 detections = payload["detections"]
 ```
+
+The decoded JSON includes:
+
+- `detections`
+- `image`
+- `runtime`
 
 ## Compatibility references
 

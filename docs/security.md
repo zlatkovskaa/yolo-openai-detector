@@ -13,6 +13,7 @@ Primary risks:
 - denial of service through very large base64 images
 - misleading OpenAI compatibility claims
 - accidental addition of tracking/video/background job scope
+- accidental commitment of model weights
 
 ## Security requirements
 
@@ -28,6 +29,7 @@ Primary risks:
 | `/healthz` | Return minimal non-sensitive status only. |
 | `/v1/models` | Require bearer auth. |
 | Errors | Do not leak stack traces in API responses. |
+| Runtime mode | v1 is CPU-only. |
 
 ## Secret handling
 
@@ -38,6 +40,9 @@ Never commit:
 - private model registry credentials
 - cloud credentials
 - SSH keys
+- model weights
+
+`.env` and `.env.*` are ignored by the repository. `.env.example` contains placeholders only.
 
 Allowed:
 
@@ -57,6 +62,8 @@ Reject before detector execution when:
 - decoded image exceeds maximum byte size
 - image cannot be decoded
 - user requests tracking, segmentation, video, or background processing
+- external image fetching in v1
+- image persistence in v1
 
 ## Security review checklist
 

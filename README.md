@@ -1,84 +1,93 @@
 # YOLO Image Gateway
 
-CPU-first YOLO single-image object detection through an OpenAI-compatible API style.
+OpenAI-compatible local gateway for single-image YOLO object detection.
 
-This repository is a governed CPU-first YOLO object detection gateway. Follow `AGENTS.md` and `CLAUDE.md` when changing behavior.
+This repository is governed by `AGENTS.md` and `CLAUDE.md`. The current implementation is CPU-only and intentionally small.
 
-## Mission
-
-Build a local HTTP gateway that accepts a single base64 image attached in an OpenAI-style `/v1/chat/completions` request, runs YOLO object detection on CPU, and returns detections in an OpenAI-like chat completion response.
-
-## Current status
-
-The API skeleton and CPU YOLO backend are implemented.
-
-What is in place:
+## What is implemented
 
 - fixed bearer authentication
 - `GET /healthz`
 - `GET /v1/models`
 - `POST /v1/chat/completions`
-- OpenAI-shaped request and response schemas
-- base64 data URL image parsing
-- Ultralytics-backed CPU detector adapter
-- mock-based tests that do not require model weights
+- OpenAI-style request and response envelopes
+- exactly one base64 image data URL per request
+- Ultralytics YOLO detector backend on CPU
+- config-driven model path, confidence threshold, IoU threshold, image size, and decoded image size limit
+- mock-based tests that do not require GPU/CUDA or committed model weights
 
-The service remains intentionally narrow:
+## What is intentionally not supported
 
-- one image per request
-- no tracking
-- no video
-- no segmentation
-- no background jobs
-- no database
-- no OpenAI forwarding
+- tracking
+- video
+- segmentation
+- background jobs
+- queues or workers
+- database
+- Redis/Celery
+- external image URLs
+- image persistence
+- OpenAI forwarding
+- model weights committed to the repo
+- GPU/CUDA requirement
 
-Model weights are not committed to the repository.
+## Configuration
 
-## MVP scope
+Copy `.env.example` to `.env` for local development.
 
-| Capability | Status |
-|---|---:|
-| CPU-only operation | Required |
-| Fixed bearer API key | Required |
-| `GET /healthz` | Required |
-| `GET /v1/models` | Required |
-| `POST /v1/chat/completions` | Required |
-| One image per request | Required |
-| Base64 data URL image input | Required |
-| YOLO object detection | Required |
-| Tracking | Not supported |
-| Video | Not supported |
-| Segmentation | Not supported |
-| Background jobs | Not supported |
-| Database | Not supported |
-| External image URLs | Not supported |
-| OpenAI forwarding | Not supported |
-
-## Intended API
-
-### Health
-
-```http
-GET /healthz
+```bash
+cp .env.example .env
 ```
 
-Expected response:
+`.env` is ignored by git. `.env.example` contains placeholders only.
+
+| Variable | Purpose | Example / Default |
+|---|---|---|
+| `YOLO_GATEWAY_API_KEY` | Fixed bearer API key. | `replace-with-local-development-key` |
+| `YOLO_GATEWAY_MODEL_ID` | Local model ID exposed by `/v1/models`. | `yolo-cpu-detector` |
+| `YOLO_GATEWAY_MODEL_PATH` | Path to the YOLO weights file used by Ultralytics. | `yolov8n.pt` |
+| `YOLO_GATEWAY_YOLO_MODEL` | Legacy alias for `YOLO_GATEWAY_MODEL_PATH`. | Optional |
+| `YOLO_GATEWAY_DEVICE` | Runtime device. | `cpu` |
+| `YOLO_GATEWAY_CONFIDENCE_THRESHOLD` | Detection confidence threshold. | `0.25` |
+| `YOLO_GATEWAY_IOU_THRESHOLD` | Non-maximum suppression IoU threshold. | `0.45` |
+| `YOLO_GATEWAY_IMAGE_SIZE` | Inference image size in pixels. | `640` |
+| `YOLO_GATEWAY_MAX_IMAGE_BYTES` | Maximum decoded image size. | `10485760` |
+
+`YOLO_GATEWAY_DEVICE` must remain `cpu` for v1. Non-CPU values are rejected during settings validation.
+
+Model weights are not committed to the repository. Provide a local file or compatible Ultralytics download target at runtime.
+
+## Run locally
+
+Start the API server:
+
+```bash
+./.venv/bin/python -m uvicorn yolo_image_gateway.main:app --reload --host 0.0.0.0 --port 8000
+```
+
+The service listens on `http://localhost:8000` by default.
+
+## Test and lint
+
+Run the checks used by this work order:
+
+```bash
+./.venv/bin/python -m pytest
+./.venv/bin/python -m ruff check .
+./.venv/bin/python -m ruff format --check .
+```
+
+## API Surface
+
+### `GET /healthz`
 
 ```json
-{
-  "status": "ok"
-}
+{"status":"ok"}
 ```
 
-### Models
+### `GET /v1/models`
 
-```http
-GET /v1/models
-Authorization: Bearer <YOLO_GATEWAY_API_KEY>
-```
-
-Expected response shape:
+Requires `Authorization: Bearer <YOLO_GATEWAY_API_KEY>`.
 
 ```json
 {
@@ -94,7 +103,9 @@ Expected response shape:
 }
 ```
 
-### Chat completions detection request
+### `POST /v1/chat/completions`
+
+Request example:
 
 ```http
 POST /v1/chat/completions
@@ -116,7 +127,7 @@ Content-Type: application/json
         {
           "type": "image_url",
           "image_url": {
-            "url": "data:image/jpeg;base64,..."
+            "url": "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD..."
           }
         }
       ]
@@ -125,7 +136,13 @@ Content-Type: application/json
 }
 ```
 
-Expected response shape:
+Accepted image inputs:
+
+- `data:image/jpeg;base64,...`
+- `data:image/png;base64,...`
+- `data:image/webp;base64,...`
+
+The assistant message `content` is a JSON string:
 
 ```json
 {
@@ -138,7 +155,7 @@ Expected response shape:
       "index": 0,
       "message": {
         "role": "assistant",
-        "content": "{\"detections\":[],\"image\":{\"width\":640,\"height\":480}}"
+        "content": "{\"detections\":[],\"image\":{\"width\":640,\"height\":480},\"runtime\":{\"backend\":\"ultralytics\",\"device\":\"cpu\"}}"
       },
       "finish_reason": "stop"
     }
@@ -146,45 +163,18 @@ Expected response shape:
 }
 ```
 
-`message.content` is intentionally a JSON string for OpenAI client compatibility.
+## Unsupported behavior
 
-## Setup expectation
-
-The first implementation should use Python 3.11+.
-
-Planned stack:
-
-- FastAPI
-- Pydantic
-- Uvicorn
-- Pillow and/or OpenCV
-- Ultralytics YOLO
-- pytest
-- ruff
-
-## Environment variables
-
-Copy `.env.example` to `.env` for local development.
-
-```bash
-cp .env.example .env
-```
-
-Required:
-
-```bash
-YOLO_GATEWAY_API_KEY=replace-with-local-development-key
-```
-
-Important runtime settings:
-
-- `YOLO_GATEWAY_MODEL_PATH`
-- `YOLO_GATEWAY_DEVICE` must remain `cpu` in v1
-- `YOLO_GATEWAY_CONFIDENCE_THRESHOLD`
-- `YOLO_GATEWAY_IOU_THRESHOLD`
-- `YOLO_GATEWAY_IMAGE_SIZE`
-
-`YOLO_GATEWAY_YOLO_MODEL` is retained as a compatibility alias.
+- multiple images
+- HTTP/HTTPS image URLs
+- `file://` image URLs
+- invalid base64
+- unsupported MIME types
+- video
+- segmentation
+- tracking
+- background jobs
+- OpenAI forwarding
 
 ## Governance
 

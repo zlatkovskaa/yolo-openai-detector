@@ -8,7 +8,7 @@ Local default:
 http://localhost:8000
 ```
 
-API compatibility namespace:
+Compatibility prefix:
 
 ```text
 /v1
@@ -22,7 +22,7 @@ Protected endpoints require:
 Authorization: Bearer <YOLO_GATEWAY_API_KEY>
 ```
 
-The fixed key is configured by environment variable.
+`/v1/models` and `/v1/chat/completions` use the same fixed bearer key.
 
 ## Configuration
 
@@ -34,26 +34,26 @@ The gateway is configured entirely through environment variables.
 | `YOLO_GATEWAY_MODEL_ID` | Local model identifier exposed by `/v1/models`. | `yolo-cpu-detector` |
 | `YOLO_GATEWAY_MODEL_PATH` | Path to the YOLO weights file used by the Ultralytics backend. | `yolov8n.pt` |
 | `YOLO_GATEWAY_YOLO_MODEL` | Legacy alias for `YOLO_GATEWAY_MODEL_PATH`. | Accepted for compatibility. |
-| `YOLO_GATEWAY_DEVICE` | Runtime device. | `cpu` in v1 only; non-CPU values are rejected. |
+| `YOLO_GATEWAY_DEVICE` | Runtime device. | `cpu` only; non-CPU values are rejected. |
 | `YOLO_GATEWAY_CONFIDENCE_THRESHOLD` | Minimum confidence for detections. | `0.25` |
 | `YOLO_GATEWAY_IOU_THRESHOLD` | IoU threshold used by YOLO post-processing. | `0.45` |
 | `YOLO_GATEWAY_IMAGE_SIZE` | Inference image size in pixels. | `640` |
 | `YOLO_GATEWAY_MAX_IMAGE_BYTES` | Maximum decoded image size. | `10 MiB` default |
 
+The v1 service is CPU-only. GPU/CUDA is not required and is not selected automatically.
+
 ## Endpoints
 
 ### `GET /healthz`
 
-Operational health check.
+Operational health check outside `/v1`.
 
-Authentication: not required, unless the implementation owner chooses to require it.
+Authentication: not required.
 
 Response:
 
 ```json
-{
-  "status": "ok"
-}
+{"status":"ok"}
 ```
 
 The endpoint must not reveal secrets, model paths, host information, or detailed environment data.
@@ -117,23 +117,22 @@ Request:
 }
 ```
 
-Supported MIME types:
+Accepted image inputs:
 
-- `image/jpeg`
-- `image/png`
-- `image/webp`
+- exactly one `image_url.url` value
+- `data:image/jpeg;base64,...`
+- `data:image/png;base64,...`
+- `data:image/webp;base64,...`
 
-Unsupported:
+Rejected inputs:
 
-- external URLs
-- file IDs
-- file upload objects
+- no image
 - multiple images
-- video
-- segmentation requests
-- tracking requests
-
-The v1 implementation is CPU-only. GPU/CUDA devices are not selected automatically and non-CPU `YOLO_GATEWAY_DEVICE` values are rejected during settings validation.
+- `http://` or `https://` image URLs
+- file paths or `file://` URLs
+- invalid base64
+- unsupported MIME types
+- video requests
 
 Success response:
 
@@ -187,6 +186,8 @@ Decoded content:
   }
 }
 ```
+
+The outer object is OpenAI-like, but the assistant message content is intentionally a JSON string for compatibility.
 
 ## Error shape
 
