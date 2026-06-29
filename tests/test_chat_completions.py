@@ -7,7 +7,10 @@ import pytest
 from .conftest import FakeDetector, make_data_url
 
 
-def _request_payload(image_url: str) -> dict[str, object]:
+def _request_payload(
+    image_url: str,
+    text: str = "Detect objects in this image.",
+) -> dict[str, object]:
     return {
         "model": "yolo-cpu-detector",
         "messages": [
@@ -16,7 +19,7 @@ def _request_payload(image_url: str) -> dict[str, object]:
                 "content": [
                     {
                         "type": "text",
-                        "text": "Detect objects in this image.",
+                        "text": text,
                     },
                     {
                         "type": "image_url",
@@ -60,6 +63,51 @@ def test_chat_completion_rejects_multiple_images(client, auth_headers) -> None:
 
     assert response.status_code == 400
     assert response.json()["error"]["code"] == "invalid_image_count"
+
+
+@pytest.mark.parametrize(
+    "text",
+    [
+        "Track these objects across frames.",
+        "Please do video analysis on this image.",
+        "Use segmentation masks for the objects.",
+        "Run this as a background processing job.",
+        "Send this to a queue worker as an async job.",
+    ],
+)
+def test_chat_completion_rejects_unsupported_request_intents(
+    client,
+    auth_headers,
+    text: str,
+) -> None:
+    response = client.post(
+        "/v1/chat/completions",
+        headers=auth_headers,
+        json=_request_payload(make_data_url("PNG"), text=text),
+    )
+
+    assert response.status_code == 400
+    body = response.json()
+    assert body["error"]["code"] == "unsupported_request_intent"
+    assert "single-image object detection only" in body["error"]["message"]
+
+
+def test_chat_completion_accepts_background_phrasing(
+    client,
+    auth_headers,
+    fake_detector: FakeDetector,
+) -> None:
+    response = client.post(
+        "/v1/chat/completions",
+        headers=auth_headers,
+        json=_request_payload(
+            make_data_url("PNG"),
+            text="Detect objects in the background of this image.",
+        ),
+    )
+
+    assert response.status_code == 200
+    assert fake_detector.seen_images
 
 
 @pytest.mark.parametrize(
