@@ -77,6 +77,22 @@ Run the checks used by this work order:
 ./.venv/bin/python -m ruff format --check .
 ```
 
+## Client compatibility smoke examples
+
+Use the new examples to call the local gateway the same way an OpenAI-style client would:
+
+- [docs/client-usage.md](docs/client-usage.md)
+- `examples/openai_client_single_image.py`
+- `examples/curl_single_image.sh`
+- `scripts/encode_image_data_url.py`
+
+The example flow is:
+
+1. Encode a local image as a base64 data URL.
+2. Send one `POST /v1/chat/completions` request to the local gateway.
+3. Parse `choices[0].message.content` as JSON.
+4. Print detections and image metadata.
+
 ## API Surface
 
 ### `GET /healthz`
