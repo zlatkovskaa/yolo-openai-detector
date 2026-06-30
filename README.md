@@ -86,6 +86,8 @@ Use the new examples to call the local gateway the same way an OpenAI-style clie
 - `examples/curl_single_image.sh`
 - `scripts/encode_image_data_url.py`
 
+For a manual smoke path against a real local YOLO weight file, see [docs/real-model-smoke.md](docs/real-model-smoke.md).
+
 The example flow is:
 
 1. Encode a local image as a base64 data URL.
