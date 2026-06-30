@@ -27,6 +27,8 @@ docker build -t yolo-openai-detector:local .
 
 The image uses a Python base image and installs the project code into the container.
 
+Docker build and Docker run were not verified in the development environment used for this PR because Docker was not installed there. The Dockerfile and Docker documentation were validated with static tests, pytest, and ruff. Users with Docker installed should run the build and run commands below to verify the image locally.
+
 ## Run the container
 
 Mount a local model directory read-only and provide the required environment variables:
