@@ -87,6 +87,7 @@ Use the new examples to call the local gateway the same way an OpenAI-style clie
 - `scripts/encode_image_data_url.py`
 
 For a manual smoke path against a real local YOLO weight file, see [docs/real-model-smoke.md](docs/real-model-smoke.md).
+For Docker packaging and local container usage, see [docs/docker.md](docs/docker.md).
 
 The example flow is:
 
